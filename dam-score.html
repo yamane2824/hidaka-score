@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>繁殖牝馬スコア</title>
+<style>
+:root {
+  --bg: #ffffff; --bg-secondary: #f7f6f2;
+  --text: #1a1a1a; --text-secondary: #6a6a6a; --text-tertiary: #999999;
+  --border: rgba(0, 0, 0, 0.1); --border-strong: rgba(0, 0, 0, 0.2);
+  --accent: #185FA5; --accent-bg: #E6F1FB;
+  --pink: #993556; --pink-bg: #FBEAF0;
+  --gray: #5F5E5A; --gray-bg: #F1EFE8;
+  --green: #3B6D11; --green-bg: #EAF3DE;
+  --amber: #854F0B; --amber-bg: #FAEEDA;
+  --red: #B83A3A; --red-bg: #FCE4E4;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a1a; --bg-secondary: #252525;
+    --text: #e8e8e8; --text-secondary: #a8a8a8; --text-tertiary: #6a6a6a;
+    --border: rgba(255, 255, 255, 0.12); --border-strong: rgba(255, 255, 255, 0.25);
+    --accent: #5DA1E0; --accent-bg: #1d3a5c;
+    --pink: #E693B5; --pink-bg: #4a1f30;
+    --gray: #999; --gray-bg: #333;
+    --green: #97C459; --green-bg: #1e3a0a;
+    --amber: #EF9F27; --amber-bg: #3d2a05;
+    --red: #E37B7B; --red-bg: #4a1c1c;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+  background: var(--bg); color: var(--text);
+  margin: 0; padding: 0; font-size: 14px; line-height: 1.6;
+}
+.container { max-width: 1500px; margin: 0 auto; padding: 24px 20px 60px; }
+header { border-bottom: 0.5px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+.nav { display: flex; gap: 16px; margin-bottom: 12px; }
+.nav a {
+  color: var(--text-secondary); text-decoration: none;
+  padding: 6px 12px; border-radius: 6px; font-size: 13px;
+}
+.nav a:hover { background: var(--bg-secondary); color: var(--text); }
+.nav a.active { background: var(--accent-bg); color: var(--accent); font-weight: 500; }
+h1 { font-size: 22px; font-weight: 500; margin: 0 0 4px; }
+.subtitle { color: var(--text-secondary); font-size: 13px; }
+.section { margin-bottom: 28px; }
+.section-title {
+  font-size: 12px; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+.input-box {
+  padding: 18px; background: var(--bg-secondary);
+  border-radius: 8px; margin-bottom: 12px;
+}
+.input-box label {
+  display: block; font-size: 12px; color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.input-row {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.file-input {
+  padding: 8px 12px; background: var(--bg);
+  border: 0.5px solid var(--border-strong);
+  border-radius: 6px; cursor: pointer; font-size: 13px;
+}
+textarea {
+  width: 100%; min-height: 120px;
+  padding: 10px 12px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--bg); color: var(--text);
+  font-family: inherit; font-size: 13px; line-height: 1.5;
+  resize: vertical;
+}
+button.primary {
+  background: var(--accent); color: white;
+  border: none; padding: 10px 24px;
+  border-radius: 6px; font-size: 14px; font-weight: 500;
+  cursor: pointer;
+}
+button.primary:hover { opacity: 0.9; }
+button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 16px 0; color: var(--text-tertiary); font-size: 12px;
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+.status {
+  padding: 8px 12px; background: var(--accent-bg);
+  border-radius: 6px; font-size: 12px;
+  color: var(--accent); margin-bottom: 12px;
+}
+.status.warn { background: var(--amber-bg); color: var(--amber); }
+.status.err { background: var(--red-bg); color: var(--red); }
+.summary {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+.metric { background: var(--bg-secondary); padding: 14px 16px; border-radius: 8px; }
+.metric-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+.metric-value { font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.metric-sub { font-size: 14px; color: var(--text-secondary); font-weight: 400; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  text-align: left; padding: 10px 12px;
+  font-weight: 500; color: var(--text-secondary);
+  border-bottom: 0.5px solid var(--border-strong);
+  white-space: nowrap; cursor: pointer; user-select: none;
+}
+th:hover { color: var(--text); }
+th.numeric { text-align: right; }
+th .sort-arrow { font-size: 10px; margin-left: 2px; opacity: 0.5; }
+th.active .sort-arrow { opacity: 1; color: var(--accent); }
+td { padding: 9px 12px; border-bottom: 0.5px solid var(--border); font-variant-numeric: tabular-nums; }
+td.numeric { text-align: right; }
+.sex-pill {
+  display: inline-block; padding: 2px 9px; border-radius: 10px;
+  font-size: 11px; font-weight: 500;
+}
+.sex-pill.male { background: var(--accent-bg); color: var(--accent); }
+.sex-pill.female { background: var(--pink-bg); color: var(--pink); }
+.sex-pill.gelding { background: var(--gray-bg); color: var(--gray); }
+.row-nodata { opacity: 0.45; }
+.row-low { opacity: 0.7; }
+.empty-msg { padding: 40px 20px; text-align: center; color: var(--text-tertiary); }
+.note {
+  margin-top: 24px; padding: 14px 16px; background: var(--bg-secondary);
+  border-radius: 8px; font-size: 12px; color: var(--text-secondary); line-height: 1.7;
+}
+.note strong { color: var(--text); font-weight: 500; }
+.actions {
+  display: flex; gap: 8px; margin-bottom: 12px;
+}
+.btn-small {
+  padding: 6px 12px;
+  background: var(--bg); color: var(--text-secondary);
+  border: 0.5px solid var(--border-strong);
+  border-radius: 6px; font-size: 12px; cursor: pointer;
+}
+.btn-small:hover { background: var(--bg-secondary); color: var(--text); }
+.foal-detail {
+  font-size: 11px; color: var(--text-tertiary);
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  table { font-size: 12px; }
+  th, td { padding: 7px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <div class="nav">
+    <a href="/">種牡馬ダッシュボード</a>
+    <a href="/dam-score.html" class="active">繁殖牝馬スコア</a>
+  </div>
+  <h1>繁殖牝馬スコア</h1>
+  <div class="subtitle">募集馬リスト（CSV/テキスト）の母系評価</div>
+</header>
+
+<div class="section">
+  <div class="section-title">入力</div>
+
+  <div class="input-box">
+    <label>① CSVファイルをアップロード（社台TC等のクラブ形式に対応）</label>
+    <div class="input-row">
+      <input type="file" id="csv-file" accept=".csv" class="file-input">
+      <span id="file-status" style="font-size: 12px; color: var(--text-tertiary);"></span>
+    </div>
+
+    <div class="divider">または</div>
+
+    <label>② 母名を1行ずつ貼り付け（先頭の「の25」「の24」等は自動で除去されます）</label>
+    <textarea id="text-input" placeholder="例:
+ハッピーリーズ
+カリーナミア
+シーザリオの25
+メンディドの25"></textarea>
+
+    <div class="input-row" style="margin-top: 12px;">
+      <button class="primary" id="evaluate-btn">評価する</button>
+    </div>
+  </div>
+
+  <div id="loading-status" class="status" style="display:none;">辞書を読み込み中...</div>
+</div>
+
+<div id="result-section" class="section" style="display:none;">
+  <div class="section-title">評価結果</div>
+
+  <div class="summary" id="result-summary"></div>
+
+  <div class="actions">
+    <button class="btn-small" id="export-csv">CSVでエクスポート</button>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table id="result-table">
+      <thead><tr id="header-row"></tr></thead>
+      <tbody id="result-body"></tbody>
+    </table>
+  </div>
+  <div class="empty-msg" id="empty-msg" style="display:none;">該当データなし</div>
+</div>
+
+<div class="note">
+<strong>母名の自動抽出:</strong> 馬名末尾の「の25」「の24」などは自動で除去されます（例:「カリーナミアの25」→「カリーナミア」）。<br>
+<strong>母自身の獲得賞金:</strong> JRA出走経験のある母のみ算出。海外馬・JRA未出走馬は「-」表示。<br>
+<strong>産駒データ:</strong> 同じ母から生まれた他の競走馬のJRA成績（産駒3頭以上の母のみ評価対象）。<br>
+<strong>サンプル数の信頼性:</strong> 産駒3頭未満の母は半透明、3-4頭は中程度、5頭以上が統計的目安。
+</div>
+
+</div>
+
+<script>
+let DAM_DATA = null;
+const state = {
+  rows: [],         // [{originalLine, num, name, sire, bms, price, sex, damName, damInfo}, ...]
+  sortKey: 'foal_avg_prize',
+  sortDir: 'desc',
+};
+
+// 母名抽出: 「カリーナミアの25」→「カリーナミア」
+function extractDamName(horseName) {
+  if (!horseName) return '';
+  const m = horseName.match(/^(.+?)の\d{1,2}$/);
+  return m ? m[1] : horseName;
+}
+
+// 正規化（空白・全角空白除去）
+function normalizeName(name) {
+  if (!name) return '';
+  return name.replace(/\s/g, '').replace(/\u3000/g, '').trim();
+}
+
+// CSVパーサ（シンプル版、ダブルクォート対応）
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.length > 0);
+  return lines.map(line => {
+    const cells = [];
+    let cur = '';
+    let inQuote = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (inQuote) {
+        if (c === '"' && line[i+1] === '"') { cur += '"'; i++; }
+        else if (c === '"') inQuote = false;
+        else cur += c;
+      } else {
+        if (c === ',') { cells.push(cur); cur = ''; }
+        else if (c === '"') inQuote = true;
+        else cur += c;
+      }
+    }
+    cells.push(cur);
+    return cells;
+  });
+}
+
+// CSVから {馬番号, 馬名, 父名, bms, 性別, 募集価格} を抽出
+function extractRowsFromCSV(csvText) {
+  const rows = parseCSV(csvText);
+  if (rows.length === 0) return [];
+
+  const header = rows[0].map(h => h.trim().toLowerCase());
+  // 列インデックスを推測
+  const idx = {};
+  const headerMap = {
+    num: ['馬番号', '番号', '番号', 'no', 'no.'],
+    name: ['馬名', 'name', 'ホース', 'horse'],
+    sire: ['父名', '父', 'sire'],
+    bms: ['bms', '母父', 'damsire'],
+    sex: ['性別', 'sex'],
+    price: ['募集価格', '価格', 'price']
+  };
+  for (const [key, candidates] of Object.entries(headerMap)) {
+    for (let i = 0; i < header.length; i++) {
+      if (candidates.some(c => header[i].includes(c.toLowerCase()))) {
+        idx[key] = i;
+        break;
+      }
+    }
+  }
+
+  if (idx.name === undefined) {
+    return null; // 馬名列がないと処理不可
+  }
+
+  const result = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (r.length === 0 || !r[idx.name]) continue;
+    result.push({
+      num: idx.num !== undefined ? r[idx.num] : '',
+      name: r[idx.name],
+      sire: idx.sire !== undefined ? r[idx.sire] : '',
+      bms: idx.bms !== undefined ? r[idx.bms] : '',
+      sex: idx.sex !== undefined ? r[idx.sex] : '',
+      price: idx.price !== undefined ? r[idx.price] : '',
+    });
+  }
+  return result;
+}
+
+// テキスト入力から行を抽出
+function extractRowsFromText(text) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+  return lines.map(line => ({
+    num: '', name: line, sire: '', bms: '', sex: '', price: '',
+  }));
+}
+
+// 母情報を辞書から取得
+function lookupDamInfo(damName) {
+  const norm = normalizeName(damName);
+  return DAM_DATA[norm] || null;
+}
+
+// 集計
+function aggregateFoals(damInfo) {
+  if (!damInfo) return null;
+  const foals = (damInfo.f || []).filter(f => f.p > 0 || f.w > 0); // 出走経験のある産駒のみ
+  if (foals.length === 0) {
+    return {
+      foal_count: 0,
+      foal_won: 0,
+      foal_win_rate: 0,
+      foal_grade_won: 0,
+      foal_avg_prize: 0,
+      foal_max_prize: 0,
+      foals: [],
+    };
+  }
+  const won = foals.reduce((a, f) => a + f.w, 0);
+  const grade_won = foals.reduce((a, f) => a + f.g, 0);
+  const prize_sum = foals.reduce((a, f) => a + f.p, 0);
+  const max_prize = Math.max(...foals.map(f => f.p));
+  return {
+    foal_count: foals.length,
+    foal_won: won,
+    foal_win_rate: foals.length > 0 ? won / foals.length * 100 : 0,
+    foal_grade_won: grade_won,
+    foal_avg_prize: foals.length > 0 ? prize_sum / foals.length : 0,
+    foal_max_prize: max_prize,
+    foals: foals,
+  };
+}
+
+function fmtPrize(man) {
+  if (man == null || isNaN(man) || man === 0) return '-';
+  if (man >= 10000) return (man / 10000).toFixed(2) + '億円';
+  return Math.round(man).toLocaleString() + '万円';
+}
+
+function reliabilityClass(count) {
+  if (count >= 5) return '';
+  if (count >= 3) return 'row-low';
+  return 'row-nodata';
+}
+
+function sexPillClass(sex) {
+  if (sex === '牡' || sex === '牡馬') return 'male';
+  if (sex === '牝' || sex === '牝馬' || sex === 'ﾒｽ' || sex === 'メス') return 'female';
+  if (sex === '騸' || sex === 'セ' || sex === 'セン') return 'gelding';
+  return 'gelding';
+}
+
+function sexLabel(sex) {
+  if (sex === 'ﾒｽ' || sex === 'メス') return '牝';
+  return sex || '?';
+}
+
+function loadDamData() {
+  const statusEl = document.getElementById('loading-status');
+  statusEl.style.display = 'block';
+  statusEl.textContent = '辞書を読み込み中...';
+
+  return fetch('/dam_data.json')
+    .then(r => r.json())
+    .then(data => {
+      DAM_DATA = data;
+      statusEl.textContent = `辞書読み込み完了（${Object.keys(data).length.toLocaleString()}件の母データ）`;
+      statusEl.className = 'status';
+      setTimeout(() => statusEl.style.display = 'none', 2000);
+    })
+    .catch(err => {
+      statusEl.textContent = '辞書の読み込みに失敗しました: ' + err.message;
+      statusEl.className = 'status err';
+    });
+}
+
+function evaluate() {
+  if (!DAM_DATA) {
+    alert('辞書がまだ読み込まれていません。少し待ってください。');
+    return;
+  }
+
+  const text = document.getElementById('text-input').value.trim();
+  let rows = [];
+  if (text) {
+    rows = extractRowsFromText(text);
+  } else {
+    alert('CSVをアップロードするか、母名を入力してください。');
+    return;
+  }
+
+  // 各行に母情報をひもづける
+  state.rows = rows.map(r => {
+    const damName = extractDamName(r.name);
+    const damInfo = lookupDamInfo(damName);
+    const agg = aggregateFoals(damInfo);
+    return {
+      ...r,
+      damName: damName,
+      damPrize: damInfo ? damInfo.p : null,
+      damHasRecord: damInfo ? damInfo.r === 1 : false,
+      foal_count: agg ? agg.foal_count : 0,
+      foal_won: agg ? agg.foal_won : 0,
+      foal_win_rate: agg ? agg.foal_win_rate : 0,
+      foal_grade_won: agg ? agg.foal_grade_won : 0,
+      foal_avg_prize: agg ? agg.foal_avg_prize : 0,
+      foal_max_prize: agg ? agg.foal_max_prize : 0,
+      foals: agg ? agg.foals : [],
+      has_dam_data: damInfo !== null,
+    };
+  });
+
+  renderResult();
+}
+
+function evaluateCSV(csvText) {
+  const rows = extractRowsFromCSV(csvText);
+  if (rows === null) {
+    alert('「馬名」列が見つかりません。CSVのフォーマットを確認してください。');
+    return;
+  }
+  if (rows.length === 0) {
+    alert('データ行が見つかりません。');
+    return;
+  }
+  // CSVのrowsをstate.rows形式に変換
+  state.rows = rows.map(r => {
+    const damName = extractDamName(r.name);
+    const damInfo = lookupDamInfo(damName);
+    const agg = aggregateFoals(damInfo);
+    return {
+      ...r,
+      damName: damName,
+      damPrize: damInfo ? damInfo.p : null,
+      damHasRecord: damInfo ? damInfo.r === 1 : false,
+      foal_count: agg ? agg.foal_count : 0,
+      foal_won: agg ? agg.foal_won : 0,
+      foal_win_rate: agg ? agg.foal_win_rate : 0,
+      foal_grade_won: agg ? agg.foal_grade_won : 0,
+      foal_avg_prize: agg ? agg.foal_avg_prize : 0,
+      foal_max_prize: agg ? agg.foal_max_prize : 0,
+      foals: agg ? agg.foals : [],
+      has_dam_data: damInfo !== null,
+    };
+  });
+
+  renderResult();
+}
+
+function renderResult() {
+  document.getElementById('result-section').style.display = 'block';
+
+  // サマリ
+  const total = state.rows.length;
+  const withData = state.rows.filter(r => r.has_dam_data).length;
+  const grade_won_total = state.rows.reduce((a, r) => a + r.foal_grade_won, 0);
+  const avg_prize = state.rows.filter(r => r.foal_avg_prize > 0).reduce((a, r) => a + r.foal_avg_prize, 0) /
+    Math.max(1, state.rows.filter(r => r.foal_avg_prize > 0).length);
+
+  document.getElementById('result-summary').innerHTML = `
+    <div class="metric">
+      <div class="metric-label">対象募集馬</div>
+      <div class="metric-value">${total}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">母データあり</div>
+      <div class="metric-value">${withData} <span class="metric-sub">/ ${total}</span></div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">兄姉重賞勝ち合計</div>
+      <div class="metric-value">${grade_won_total}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">兄姉平均賞金（平均）</div>
+      <div class="metric-value" style="font-size:16px;">${fmtPrize(avg_prize)}</div>
+    </div>
+  `;
+
+  // ヘッダ
+  const tr = document.getElementById('header-row');
+  tr.innerHTML = `
+    <th data-sort="num">No.<span class="sort-arrow">↕</span></th>
+    <th data-sort="name">馬名<span class="sort-arrow">↕</span></th>
+    <th data-sort="sire">父<span class="sort-arrow">↕</span></th>
+    <th data-sort="damName">母<span class="sort-arrow">↕</span></th>
+    <th data-sort="sex">性別<span class="sort-arrow">↕</span></th>
+    <th class="numeric" data-sort="price">募集価格<span class="sort-arrow">↕</span></th>
+    <th class="numeric" data-sort="damPrize">母自身賞金<span class="sort-arrow">↕</span></th>
+    <th class="numeric" data-sort="foal_count">兄姉数<span class="sort-arrow">↕</span></th>
+    <th class="numeric" data-sort="foal_win_rate">兄姉勝上率<span class="sort-arrow">↕</span></th>
+    <th class="numeric" data-sort="foal_grade_won">重賞勝ち<span class="sort-arrow">↕</span></th>
+    <th class="numeric" data-sort="foal_max_prize">最高賞金<span class="sort-arrow">↕</span></th>
+    <th class="numeric" data-sort="foal_avg_prize">平均賞金<span class="sort-arrow">↕</span></th>
+  `;
+  tr.querySelectorAll('th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+      const k = th.dataset.sort;
+      if (state.sortKey === k) {
+        state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.sortKey = k;
+        const isText = ['num','name','sire','damName','sex','price'].includes(k);
+        state.sortDir = isText ? 'asc' : 'desc';
+      }
+      renderResult();
+    });
+  });
+
+  // ソート
+  const sorted = [...state.rows].sort((a, b) => {
+    const k = state.sortKey;
+    const dir = state.sortDir === 'asc' ? 1 : -1;
+    let av = a[k]; let bv = b[k];
+    if (av == null) av = -Infinity;
+    if (bv == null) bv = -Infinity;
+    if (typeof av === 'string' && typeof bv === 'string') {
+      // 数字を含む文字列も自然順で
+      const an = parseFloat(av); const bn = parseFloat(bv);
+      if (!isNaN(an) && !isNaN(bn)) return (an - bn) * dir;
+      return av.localeCompare(bv, 'ja') * dir;
+    }
+    return (av - bv) * dir;
+  });
+
+  // ボディ
+  const tbody = document.getElementById('result-body');
+  const empty = document.getElementById('empty-msg');
+  if (sorted.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = sorted.map(r => {
+    const opClass = !r.has_dam_data ? 'row-nodata' : reliabilityClass(r.foal_count);
+    const sexCls = sexPillClass(r.sex);
+    const sexLab = sexLabel(r.sex);
+
+    return `
+      <tr class="${opClass}">
+        <td>${r.num || '-'}</td>
+        <td>${r.name || '-'}</td>
+        <td>${r.sire || '-'}</td>
+        <td>${r.damName || '-'}${r.has_dam_data ? '' : ' <span style="color:var(--text-tertiary);">(データなし)</span>'}</td>
+        <td><span class="sex-pill ${sexCls}">${sexLab}</span></td>
+        <td class="numeric">${r.price || '-'}</td>
+        <td class="numeric">${r.has_dam_data ? fmtPrize(r.damPrize) : '-'}</td>
+        <td class="numeric">${r.has_dam_data ? r.foal_count : '-'}</td>
+        <td class="numeric">${r.foal_count > 0 ? r.foal_win_rate.toFixed(1) + '%' : '-'}</td>
+        <td class="numeric">${r.foal_count > 0 ? r.foal_grade_won : '-'}</td>
+        <td class="numeric">${r.foal_count > 0 ? fmtPrize(r.foal_max_prize) : '-'}</td>
+        <td class="numeric">${r.foal_count > 0 ? fmtPrize(r.foal_avg_prize) : '-'}</td>
+      </tr>
+    `;
+  }).join('');
+
+  // ソート矢印
+  document.querySelectorAll('th[data-sort]').forEach(th => {
+    th.classList.toggle('active', th.dataset.sort === state.sortKey);
+    const arrow = th.querySelector('.sort-arrow');
+    if (arrow) {
+      arrow.textContent = th.dataset.sort === state.sortKey
+        ? (state.sortDir === 'asc' ? '↑' : '↓') : '↕';
+    }
+  });
+}
+
+function exportCSV() {
+  if (state.rows.length === 0) return;
+  const headers = ['No.', '馬名', '父', '母', '性別', '募集価格', '母自身賞金(万円)', '兄姉数', '兄姉勝上率(%)', '重賞勝ち', '最高賞金(万円)', '平均賞金(万円)'];
+  const lines = [headers.join(',')];
+  for (const r of state.rows) {
+    lines.push([
+      r.num, r.name, r.sire, r.damName, sexLabel(r.sex), r.price,
+      r.has_dam_data ? r.damPrize : '',
+      r.has_dam_data ? r.foal_count : '',
+      r.foal_count > 0 ? r.foal_win_rate.toFixed(1) : '',
+      r.foal_count > 0 ? r.foal_grade_won : '',
+      r.foal_count > 0 ? r.foal_max_prize : '',
+      r.foal_count > 0 ? r.foal_avg_prize : '',
+    ].map(v => {
+      const s = (v == null ? '' : String(v));
+      return s.includes(',') ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }).join(','));
+  }
+  const blob = new Blob(['\ufeff' + lines.join('\n')], {type: 'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'dam_score_result.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// CSVファイル入力
+document.getElementById('csv-file').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const status = document.getElementById('file-status');
+  status.textContent = file.name + ' を読み込み中...';
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const text = ev.target.result;
+    status.textContent = file.name + ' を読み込みました。「評価する」をクリック';
+    // テキスト入力欄をクリア
+    document.getElementById('text-input').value = '';
+    // ボタンクリック時に CSVデータを使う
+    document.getElementById('evaluate-btn').onclick = () => evaluateCSV(text);
+  };
+  reader.readAsText(file, 'utf-8');
+  // フォールバックでcp932も試す
+  setTimeout(() => {
+    if (reader.result && /[\ufffd]/.test(reader.result)) {
+      const reader2 = new FileReader();
+      reader2.onload = (ev) => {
+        const text = ev.target.result;
+        document.getElementById('evaluate-btn').onclick = () => evaluateCSV(text);
+      };
+      reader2.readAsText(file, 'shift_jis');
+    }
+  }, 100);
+});
+
+document.getElementById('evaluate-btn').addEventListener('click', evaluate);
+document.getElementById('export-csv').addEventListener('click', exportCSV);
+
+// 起動時に辞書を読み込む
+loadDamData();
+</script>
+</body>
+</html>
