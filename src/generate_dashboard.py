@@ -24,7 +24,7 @@ OUTPUT_PATH = Path(__file__).resolve().parent.parent / 'index.html'
 DAM_DATA_PATH = Path(__file__).resolve().parent.parent / 'dam_data.json'
 
 MIN_SIRE_TOTAL = 10
-MIN_DAM_FOALS = 3
+MIN_DAM_FOALS = 2
 RECENT_YEAR_THRESHOLD = 2016
 GRADE_STAKES = {'A', 'B', 'C', 'D'}
 SEX_LABELS = {'1': '牡', '2': '牝', '3': '騸'}
@@ -347,7 +347,6 @@ def compute_dam_dictionary(horses, basic_stats):
             'h': h['horse_name'],
             's': h['sire'],
             'x': h['sex'],
-            'y': h['birth_year'],
             'w': stats.get('won', 0),
             'g': stats.get('grade_won', 0),
             'p': round(stats.get('prize', 0) * 100 / 10000, 1),
@@ -1347,10 +1346,10 @@ def main():
     print(f'完了: {OUTPUT_PATH}')
     print(f'  ファイルサイズ: {OUTPUT_PATH.stat().st_size / 1024:.1f} KB')
 
-    print(f'母名辞書をJSONとして保存中（産駒{MIN_DAM_FOALS}頭以上のみ）...')
+    print(f'母名辞書をJSONとして保存中（産駒{MIN_DAM_FOALS}頭以上 または 母出走経験あり）...')
     filtered_dam_dict = {
         k: v for k, v in dam_dict.items()
-        if len(v['f']) >= MIN_DAM_FOALS
+        if len(v['f']) >= MIN_DAM_FOALS or v['r'] == 1
     }
     print(f'  対象母: {len(filtered_dam_dict)}件')
     with open(DAM_DATA_PATH, 'w', encoding='utf-8') as f:
